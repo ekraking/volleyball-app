@@ -1,3 +1,89 @@
+import streamlit as st
+import pandas as pd
+
+# ---------- إعداد الصفحة ----------
+st.set_page_config(
+    page_title="نتائج بطولات منطقة الإسكندرية للكرة الطائرة",
+    page_icon="🏐",
+    layout="wide"
+)
+
+st.title("📊 نتائج بطولات منطقة الإسكندرية للكرة الطائرة")
+
+# ---------- تحميل البيانات ----------
+
+
+def load_data(file):
+    try:
+        matches = pd.read_excel(file, sheet_name="matches")
+        results = pd.read_excel(file, sheet_name="results")
+        ranking = pd.read_excel(file, sheet_name="ranking")
+        return matches, results, ranking
+    except FileNotFoundError:
+        st.error(
+            f"⚠️ الملف {file} غير موجود. تأكد من رفعه على GitHub مع المشروع.")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+
+# ---------- ربط البطولات بالملفات ----------
+files = {
+    "U15": "u15.xlsx",
+    "U17": "u17.xlsx",
+    "Seniors": "seniors.xlsx"
+}
+
+# ---------- اختيار البطولة ----------
+tournament = st.selectbox("🏆 اختر البطولة:", list(files.keys()))
+
+matches, results, ranking = load_data(files[tournament])
+
+if not matches.empty:
+    # -------- دمج المباريات مع النتائج --------
+    if not results.empty:
+        df = matches.merge(
+            results, on=["Date", "Team A", "Team B"], how="left")
+    else:
+        df = matches.copy()
+        df["Result"] = "-"
+
+    # إضافة عمود الحالة
+    df["Status"] = df["Result"].apply(
+        lambda x: "Upcoming" if pd.isna(x) or x == "-" else "Finished")
+
+    # -------- Tabs للتنظيم --------
+    tab1, tab2, tab3 = st.tabs(["📅 جدول المباريات", "✅ النتائج", "📌 الترتيب"])
+
+    with tab1:
+        st.subheader("📅 جدول المباريات")
+        st.dataframe(df[["Date", "Time", "Team A", "Team B",
+                     "Status"]], use_container_width=True)
+
+    with tab2:
+        st.subheader("✅ النتائج")
+        st.dataframe(df[["Date", "Team A", "Team B", "Result",
+                     "Status"]], use_container_width=True)
+
+    with tab3:
+        st.subheader("📌 جدول الترتيب")
+        if not ranking.empty:
+            cols_to_show = ["Team", "Points", "Wins", "Losses", "Rank"]
+            ranking = ranking[cols_to_show]
+            st.dataframe(ranking, use_container_width=True)
+        else:
+            st.info("⚠️ لم يتم رفع جدول ترتيب للبطولة حتى الآن.")
+
+    # -------- إحصائيات صغيرة --------
+    st.markdown("### 📊 ملخص البطولة")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.metric("🔜 عدد المباريات القادمة", len(
+            df[df["Status"] == "Upcoming"]))
+    with col2:
+        st.metric("🏆 عدد المباريات المنتهية", len(
+            df[df["Status"] == "Finished"]))
+
+
 # import streamlit as st
 # import pandas as pd
 
@@ -77,75 +163,75 @@
 # st.dataframe(df, use_container_width=True)
 
 
-import streamlit as st
-import pandas as pd
+# import streamlit as st
+# import pandas as pd
 
-# ---------- إعداد الصفحة ----------
-st.set_page_config(
-    page_title="Volleyball Matches",
-    page_icon="🏐",
-    layout="wide"
-)
+# # ---------- إعداد الصفحة ----------
+# st.set_page_config(
+#     page_title="Volleyball Matches",
+#     page_icon="🏐",
+#     layout="wide"
+# )
 
-st.title("🏐 Volleyball Matches & Results")
-st.markdown("### اختر البطولة لعرض المباريات والنتائج")
+# st.title("🏐 Volleyball Matches & Results")
+# st.markdown("### اختر البطولة لعرض المباريات والنتائج")
 
-# ---------- تحميل البيانات ----------
-
-
-def load_data(file):
-    try:
-        df = pd.read_excel(file)
-        return df
-    except FileNotFoundError:
-        st.error(
-            f"⚠️ الملف {file} غير موجود. تأكد من رفعه على GitHub مع المشروع.")
-        return pd.DataFrame()
+# # ---------- تحميل البيانات ----------
 
 
-# ---------- ربط البطولات بالملفات ----------
-files = {
-    "U15": "u15.xlsx",
-    "U17": "u17.xlsx",
-    "Seniors": "seniors.xlsx"
-}
+# def load_data(file):
+#     try:
+#         df = pd.read_excel(file)
+#         return df
+#     except FileNotFoundError:
+#         st.error(
+#             f"⚠️ الملف {file} غير موجود. تأكد من رفعه على GitHub مع المشروع.")
+#         return pd.DataFrame()
 
-# ---------- اختيار البطولة ----------
-tournament = st.selectbox("🏆 اختر البطولة:", list(files.keys()))
 
-df = load_data(files[tournament])
+# # ---------- ربط البطولات بالملفات ----------
+# files = {
+#     "U15": "u15.xlsx",
+#     "U17": "u17.xlsx",
+#     "Seniors": "seniors.xlsx"
+# }
 
-if not df.empty:
-    # -------- معالجة الأعمدة --------
-    if "Result" not in df.columns:
-        df["Result"] = "-"
+# # ---------- اختيار البطولة ----------
+# tournament = st.selectbox("🏆 اختر البطولة:", list(files.keys()))
 
-    # إضافة عمود الحالة
-    df["Status"] = df["Result"].apply(
-        lambda x: "Upcoming" if pd.isna(x) or x == "-" else "Finished")
+# df = load_data(files[tournament])
 
-    # -------- Tabs للتنظيم --------
-    tab1, tab2 = st.tabs(["📅 كل المباريات", "✅ المكتملة فقط"])
+# if not df.empty:
+#     # -------- معالجة الأعمدة --------
+#     if "Result" not in df.columns:
+#         df["Result"] = "-"
 
-    with tab1:
-        st.subheader("📅 جدول المباريات والنتائج")
-        st.dataframe(df, use_container_width=True)
+#     # إضافة عمود الحالة
+#     df["Status"] = df["Result"].apply(
+#         lambda x: "Upcoming" if pd.isna(x) or x == "-" else "Finished")
 
-    with tab2:
-        st.subheader("✅ المباريات المنتهية")
-        finished = df[df["Status"] == "Finished"]
-        if finished.empty:
-            st.info("⚠️ لا توجد مباريات منتهية بعد.")
-        else:
-            st.dataframe(finished, use_container_width=True)
+#     # -------- Tabs للتنظيم --------
+#     tab1, tab2 = st.tabs(["📅 كل المباريات", "✅ المكتملة فقط"])
 
-    # -------- إحصائيات صغيرة --------
-    st.markdown("### 📊 ملخص البطولة")
-    col1, col2 = st.columns(2)
+#     with tab1:
+#         st.subheader("📅 جدول المباريات والنتائج")
+#         st.dataframe(df, use_container_width=True)
 
-    with col1:
-        st.metric("🔜 عدد المباريات القادمة", len(
-            df[df["Status"] == "Upcoming"]))
-    with col2:
-        st.metric("🏆 عدد المباريات المنتهية", len(
-            df[df["Status"] == "Finished"]))
+#     with tab2:
+#         st.subheader("✅ المباريات المنتهية")
+#         finished = df[df["Status"] == "Finished"]
+#         if finished.empty:
+#             st.info("⚠️ لا توجد مباريات منتهية بعد.")
+#         else:
+#             st.dataframe(finished, use_container_width=True)
+
+#     # -------- إحصائيات صغيرة --------
+#     st.markdown("### 📊 ملخص البطولة")
+#     col1, col2 = st.columns(2)
+
+#     with col1:
+#         st.metric("🔜 عدد المباريات القادمة", len(
+#             df[df["Status"] == "Upcoming"]))
+#     with col2:
+#         st.metric("🏆 عدد المباريات المنتهية", len(
+#             df[df["Status"] == "Finished"]))
