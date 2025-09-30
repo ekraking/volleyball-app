@@ -8,7 +8,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("📊 نتائج بطولات منطقة الإسكندرية للكرة الطائرة")
+st.title(" نتائج بطولات منطقة الإسكندرية للكرة الطائرة")
 
 # ---------- تحميل البيانات ----------
 
@@ -56,12 +56,12 @@ if not matches.empty:
     with tab1:
         st.subheader("📅 جدول المباريات")
         st.dataframe(df[["Date", "Time", "Team A", "Team B",
-                     "Status"]], use_container_width=True)
+                         "Status"]], use_container_width=True)
 
     with tab2:
         st.subheader("✅ النتائج")
         st.dataframe(df[["Date", "Team A", "Team B", "Result",
-                     "Status"]], use_container_width=True)
+                         "Status"]], use_container_width=True)
 
     with tab3:
         st.subheader("📌 جدول الترتيب")
