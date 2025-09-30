@@ -1,46 +1,43 @@
 import streamlit as st
 import pandas as pd
 
-# إعداد الصفحة
-st.set_page_config(page_title="تطبيق الكرة الطائرة", layout="wide")
+# إعدادات أساسية
+st.set_page_config(page_title="Volleyball Matches", layout="wide")
 
-st.title("🏐 نتائج منطقة الإسكندرية للكرة الطائرة 🏐")
-st.markdown(
-    "مرحبًا بك! هنا تقدر تتابع النتائج، الترتيب، والمباريات القادمة لكل مرحلة سنية.")
+st.title("🏐 تطبيق بطولات الكرة الطائرة")
 
-# تحميل البيانات من ملف Excel
+# قائمة البطولات (اللي مربوطة بملفات Excel)
+tournaments = {
+    "تحت 15 سنة": "data/u15.xlsx",
+    "تحت 17 سنة": "data/u17.xlsx",
+    "الدرجة الأولى": "data/seniors.xlsx"
+}
 
+# اختيار البطولة
+choice = st.sidebar.selectbox("اختر البطولة", list(tournaments.keys()))
 
-@st.cache_data
-def load_data():
-    matches = pd.read_excel("matches.xlsx", sheet_name="matches")
-    standings = pd.read_excel("matches.xlsx", sheet_name="standings")
-    return matches, standings
+# تحميل البيانات من الملف المرتبط
+file_path = tournaments[choice]
 
+try:
+    matches_df = pd.read_excel(file_path, sheet_name="matches")
+    results_df = pd.read_excel(file_path, sheet_name="results")
+    ranking_df = pd.read_excel(file_path, sheet_name="ranking")
+except Exception as e:
+    st.error(f"خطأ في قراءة ملف {file_path}: {e}")
+    st.stop()
 
-matches, standings = load_data()
-
-# اختيار المرحلة السنية
-age_group = st.selectbox("اختر المرحلة السنية:", matches["age_group"].unique())
-
-# فلترة البيانات
-matches_filtered = matches[matches["age_group"] == age_group]
-standings_filtered = standings[standings["age_group"] == age_group]
-
-# إنشاء التابات
-tab1, tab2, tab3 = st.tabs(
-    ["📊 جدول الترتيب", "✅ النتائج السابقة", "📅 المباريات القادمة"])
+# Tabs
+tab1, tab2, tab3 = st.tabs(["📅 جدول المباريات", "📊 النتائج", "🏆 الترتيب"])
 
 with tab1:
-    st.subheader(f"جدول الترتيب - {age_group}")
-    st.dataframe(standings_filtered)
+    st.subheader("📅 جدول المباريات")
+    st.dataframe(matches_df, use_container_width=True)
 
 with tab2:
-    st.subheader(f"النتائج السابقة - {age_group}")
-    past_matches = matches_filtered[matches_filtered["status"] == "played"]
-    st.dataframe(past_matches)
+    st.subheader("📊 النتائج")
+    st.dataframe(results_df, use_container_width=True)
 
 with tab3:
-    st.subheader(f"المباريات القادمة - {age_group}")
-    upcoming_matches = matches_filtered[matches_filtered["status"] == "upcoming"]
-    st.dataframe(upcoming_matches)
+    st.subheader("🏆 الترتيب")
+    st.dataframe(ranking_df, use_container_width=True)
